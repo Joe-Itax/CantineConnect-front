@@ -1,43 +1,113 @@
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+"use client";
+
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import Link from "next/link";
+import { submitLoginForm } from "@/lib/action";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
+  const [state, formAction, isPending] = useActionState(submitLoginForm, {
+    errors: {},
+    message: "",
+    success: false,
+  });
+
+  const router = useRouter();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  useEffect(() => {
+    if (state.success) {
+      router.push(state.redirectTo || "/dashboard");
+    }
+  }, [state, router]);
   return (
-    <form className={cn("flex flex-col gap-6", className)} {...props}>
+    <form
+      className={cn("flex flex-col gap-6", className)}
+      {...props}
+      action={formAction}
+      aria-describedby="form-error"
+      noValidate
+    >
       <div className="flex flex-col items-center gap-2 text-center">
-        <h1 className="text-2xl font-bold">Login to your account</h1>
+        <h1 className="text-2xl font-bold">Se connecter à votre compte</h1>
         <p className="text-muted-foreground text-sm text-balance">
-          Enter your email below to login to your account
+          Saisissez votre email et votre mot de passe pour vous connecter.
         </p>
       </div>
+      {state.message && !state.success && (
+        <p className="text-sm text-red-500">{state.message}</p>
+      )}
       <div className="grid gap-6">
-        <div className="grid gap-3">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" placeholder="m@example.com" required />
-        </div>
-        <div className="grid gap-3">
-          <div className="flex items-center">
-            <Label htmlFor="password">Password</Label>
-            <a
-              href="#"
-              className="ml-auto text-sm underline-offset-4 hover:underline"
-            >
-              Forgot your password?
-            </a>
+        <div className="">
+          <div className="grid gap-3">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              name="email"
+              placeholder="m@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              aria-invalid={!!state.errors?.email}
+              aria-describedby="email-error"
+            />
           </div>
-          <Input id="password" type="password" required />
+          <div id="email-error" aria-live="polite" aria-atomic="true">
+            {state?.errors?.email &&
+              state.errors.email.map((error: string) => (
+                <p className="mt-2 text-sm text-red-500" key={error}>
+                  {error}
+                </p>
+              ))}
+          </div>
+        </div>
+        <div>
+          <div className="grid gap-3">
+            <div className="flex items-center">
+              <Label htmlFor="password">Mot de passe</Label>
+              <Link
+                // href="/forgot-password"
+                href="#"
+                className="ml-auto text-sm underline-offset-4 hover:underline"
+              >
+                Mot de passe oublié ?
+              </Link>
+            </div>
+            <Input
+              id="password"
+              type="password"
+              name="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              aria-invalid={!!state.errors?.password}
+              aria-describedby="password-error"
+            />
+          </div>
+          <div id="password-error" aria-live="polite" aria-atomic="true">
+            {state?.errors?.password &&
+              state.errors.password.map((error: string) => (
+                <p className="mt-2 text-sm text-red-500" key={error}>
+                  {error}
+                </p>
+              ))}
+          </div>
         </div>
         <Button type="submit" className="w-full">
-          Login
+          {isPending ? "Connexion en cours..." : "Se connecter"}
         </Button>
-        <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
+        {/*<div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
           <span className="bg-background text-muted-foreground relative z-10 px-2">
-            Or continue with
+            Ou se connecter avec
           </span>
         </div>
         <Button variant="outline" className="w-full">
@@ -47,15 +117,15 @@ export function LoginForm({
               fill="currentColor"
             />
           </svg>
-          Login with GitHub
-        </Button>
+          Se connecter avec Google
+        </Button>*/}
       </div>
-      <div className="text-center text-sm">
+      {/* <div className="text-center text-sm">
         Don&apos;t have an account?{" "}
-        <a href="#" className="underline underline-offset-4">
+        <Link href="#" className="underline underline-offset-4">
           Sign up
-        </a>
-      </div>
+        </Link>
+      </div> */}
     </form>
-  )
+  );
 }
